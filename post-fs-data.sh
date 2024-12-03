@@ -7,6 +7,9 @@ tmpfolder=/debug_ramdisk/susfs4ksu
 mkdir -p $tmpfolder/logs
 logfile="$tmpfolder/logs/susfs.log"
 
+sus_mount_old=0
+[ -f $PERSISTENT_DIR/config.sh ] && source $PERSISTENT_DIR/config.sh
+
 dmesg | grep -q "susfs_init" > /dev/null && touch $tmpfolder/logs/susfs_active
 
 echo "susfs4ksu/post-fs-data: [logging_initialized]" > $logfile
@@ -24,5 +27,15 @@ for i in $(grep "dex2oa" /proc/mounts | cut -f2 -d " "); do
 	${SUSFS_BIN} add_try_umount $i 1 && echo "susfs4ksu/post-fs-data: [add_try_umount] $i" >> $logfile
 	${SUSFS_BIN} add_sus_mount $i && echo "susfs4ksu/post-fs-data: [add_sus_mount] $i" >> $logfile
 done
+
+# seems not all setups play with the auto
+# expose old sus_mount method to user
+# echo "sus_mount_old=1" >> /data/adb/susfs4ksu/config.sh
+[ $sus_mount_old = 1 ] && {
+	${SUSFS_BIN} add_sus_mount /system
+	${SUSFS_BIN} add_sus_mount /data/adb/modules
+	${SUSFS_BIN} add_sus_mount /debug_ramdisk
+	echo "susfs4ksu/post-fs-data: [sus_mount_old] done!" >> $logfile
+}
 
 # EOF
